@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Data Client</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        
+        .container {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            padding: 30px;
+            width: 100%;
+            max-width: 600px;
+        }
+        
+        h1, h2 {
+            color: #333;
+            text-align: center;
+        }
+        
+        h2 {
+            margin-top: 30px;
+            font-size: 1.3em;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+        
+        button {
+            background-color: #4285f4;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #3367d6;
+        }
+        
+        .result-container {
+            margin-top: 20px;
+        }
+        
+        .result {
+            padding: 15px;
+            border-radius: 4px;
+            background-color: #f9f9f9;
+            border-left: 4px solid #4285f4;
+            white-space: pre-wrap;
+            overflow-x: auto;
+            margin-bottom: 20px;
+            display: none;
+        }
+        
+        .error {
+            border-left: 4px solid #f44336;
+        }
+        
+        .loader {
+            display: none;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .loader:after {
+            content: " ";
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            margin: 8px;
+            border-radius: 50%;
+            border: 6px solid #4285f4;
+            border-color: #4285f4 transparent #4285f4 transparent;
+            animation: loader 1.2s linear infinite;
+        }
+        
+        @keyframes loader {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .token-info {
+            background-color: #e8f0fe;
+            padding: 10px;
+            border-radius: 4px;
+            margin: 20px 0;
+            font-size: 0.9em;
+            display: none;
+        }
+        
+        .token-info code {
+            word-break: break-all;
+            display: block;
+            margin-top: 5px;
+            padding: 5px;
+            background: #f5f5f5;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Student Data Client</h1>
+        
+        <div class="form-group">
+            <label for="username">Username:</label>
+            <input type="text" id="username" value="202131109764">
+        </div>
+        
+        <div class="form-group">
+            <label for="password">Password:</label>
+            <input type="password" id="password" value="2kSUYRYN">
+        </div>
+        
+        <button id="loginBtn">Step 1: Login</button>
+        
+        <div class="loader" id="authLoader"></div>
+        <div class="result error" id="authError"></div>
+        
+        <div class="token-info" id="tokenInfo">
+            <strong>Authentication successful!</strong><br>
+            Token: <code id="tokenValue"></code><br>
+            UUID: <code id="uuidValue"></code>
+        </div>
+        
+        <h2>Get Student Information</h2>
+        <button id="getDataBtn" disabled>Step 2: Get Data</button>
+        
+        <div class="loader" id="dataLoader"></div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const PROXY_BASE_URL = 'http://localhost:3000';
+            
+            const loginBtn = document.getElementById('loginBtn');
+            const getDataBtn = document.getElementById('getDataBtn');
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            const authLoader = document.getElementById('authLoader');
+            const authError = document.getElementById('authError');
+            const tokenInfo = document.getElementById('tokenInfo');
+            const tokenValue = document.getElementById('tokenValue');
+            const uuidValue = document.getElementById('uuidValue');
+            const dataLoader = document.getElementById('dataLoader');
+            
+            let authData = {
+                token: '',
+                uuid: ''
+            };
+            
+            loginBtn.addEventListener('click', async function() {
+                authLoader.style.display = 'block';
+                authError.style.display = 'none';
+                tokenInfo.style.display = 'none';
+                getDataBtn.disabled = true;
+                
+                const username = usernameInput.value.trim();
+                const password = passwordInput.value.trim();
+                
+                if (!username || !password) {
+                    showAuthError('Please enter both username and password.');
+                    return;
+                }
+                
+                try {
+                    const response = await fetch(`${PROXY_BASE_URL}/auth`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            username: username,
+                            password: password
+                        })
+                    });
+                    
+                    const data = await response.json();
+                    
+                    if (!response.ok) {
+                        showAuthError(`Authentication failed: ${data.message || 'Unknown error'}`);
+                        return;
+                    }
+                    
+                    if (data.token && data.uuid) {
+                        authData.token = data.token;
+                        authData.uuid = data.uuid;
+                        tokenValue.textContent = data.token;
+                        uuidValue.textContent = data.uuid;
+                        tokenInfo.style.display = 'block';
+                        getDataBtn.disabled = false;
+                    } else {
+                        showAuthError('Authentication response missing token or UUID');
+                    }
+                    
+                } catch (error) {
+                    showAuthError(`Error: ${error.message}`);
+                } finally {
+                    authLoader.style.display = 'none';
+                }
+            });
+            
+            getDataBtn.addEventListener('click', async function() {
+                dataLoader.style.display = 'block';
+                
+                try {
+                    const response = await fetch(`${PROXY_BASE_URL}/student-data/${authData.uuid}`, {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `${authData.token}`,
+                            'Content-Type': 'application/json'
+                        }
+                    });
+                    
+                    const data = await response.json();
+                    if (response.ok) {                        
+                        sessionStorage.setItem('studentData', JSON.stringify(data));
+                        sessionStorage.setItem('token', authData.token);
+                        window.location.href = 'student-details.html';
+                    } else {
+                        throw new Error(data.message || 'Failed to fetch student data');
+                    }
+                    
+                } catch (error) {
+                    showAuthError(`Error fetching data: ${error.message}`);
+                } finally {
+                    dataLoader.style.display = 'none';
+                }
+            });
+            
+            function showAuthError(message) {
+                authLoader.style.display = 'none';
+                authError.textContent = message;
+                authError.style.display = 'block';
+            }
+        });
+    </script>
+</body>
+</html>
