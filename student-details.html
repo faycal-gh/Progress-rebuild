@@ -90,7 +90,7 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', async function() {
-            const PROXY_BASE_URL = 'https://progress-rebuild.onrender.com'; 
+            const PROXY_BASE_URL = 'https://progress-rebuild.onrender.com'; // Update to your Render URL
             const yearsContainer = document.getElementById('yearsContainer');
             const loader = document.getElementById('loader');
             const studentData = JSON.parse(sessionStorage.getItem('studentData'));
@@ -113,6 +113,9 @@
                     yearTitle.className = 'year-title';
                     yearTitle.textContent = `Academic Year: ${yearData.anneeAcademiqueCode}`;
                     yearSection.appendChild(yearTitle);
+                    
+                    console.log(`Fetching exams for UUID: ${yearData.uuid}, ID: ${yearData.id}`);
+                    
                     const examResponse = await fetch(
                         `${PROXY_BASE_URL}/exams/${yearData.uuid}/${yearData.id}`,
                         {
@@ -121,12 +124,16 @@
                             }
                         }
                     );
+
+                    console.log('Exam Response Status:', examResponse.status);
                     
                     const examDataArray = await examResponse.json();
+                    console.log('Exam Data:', examDataArray);
+                    
                     const examsContainer = document.createElement('div');
                     examsContainer.className = 'exams-container';
 
-                    if (examResponse.ok && examDataArray.length > 0) {                        
+                    if (examResponse.ok && examDataArray.length > 0) {
                         examDataArray.forEach(period => {
                             const periodTitle = document.createElement('h3');
                             periodTitle.textContent = `${period.periodeLibelleFr} (${period.niveauLibelleLongLt})`;
