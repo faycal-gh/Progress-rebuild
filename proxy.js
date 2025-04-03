@@ -2,11 +2,12 @@ const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000; // Use environment variable for PORT
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
+app.use(express.static('public')); // Ensure 'public' folder exists if using this
+
 app.post('/auth', async (req, res) => {
   try {
     const response = await axios.post(
@@ -25,7 +26,7 @@ app.get('/student-data/:uuid', async (req, res) => {
   try {
     const token = req.headers.authorization;
     const uuid = req.params.uuid;
-    
+
     const response = await axios.get(
       `https://progres.mesrs.dz/api/infos/bac/${uuid}/dias`,
       {
@@ -47,7 +48,7 @@ app.get('/exams/:uuid/:id', async (req, res) => {
     const token = req.headers.authorization;
     const uuid = req.params.uuid;
     const id = req.params.id;
-    
+
     const response = await axios.get(
       `https://progres.mesrs.dz/api/infos/bac/${uuid}/dias/${id}/periode/bilans`,
       {
