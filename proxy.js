@@ -1,13 +1,20 @@
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+const path = require('path'); // Import path module
 const app = express();
-const PORT = process.env.PORT || 3000; // Use environment variable for PORT
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static('public')); // Ensure 'public' folder exists if using this
+app.use(express.static('public')); // Ensure 'public' folder exists for static files
 
+// Serve index.html at the root URL
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html')); // Adjust path as needed
+});
+
+// Other routes
 app.post('/auth', async (req, res) => {
   try {
     const response = await axios.post(
